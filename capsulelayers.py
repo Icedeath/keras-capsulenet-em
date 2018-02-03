@@ -64,18 +64,18 @@ class Mask(layers.Layer):
             return tuple([None, input_shape[1] * input_shape[2]])
 
 
-
 class CapsuleLayer(layers.Layer):
     """
     The capsule layer. It is similar to Dense layer. Dense layer has `in_num` inputs, each is a scalar, the output of the 
     neuron from the former layer, and it has `out_num` output neurons. CapsuleLayer just expand the output of the neuron
     from scalar to vector. So its input shape = [None, input_num_capsule, input_dim_capsule] and output shape = \
     [None, num_capsule, dim_capsule]. For Dense Layer, input_dim_capsule = dim_capsule = 1.
-    
+
     :param num_capsule: number of capsules in this layer
     :param dim_capsule: dimension of the output vectors of the capsules in this layer
     :param routings: number of iterations for the routing algorithm
     """
+
     def __init__(self, num_capsule, dim_capsule, routings=3,
                  kernel_initializer='glorot_uniform',
                  **kwargs):
@@ -155,7 +155,7 @@ def PrimaryCap(inputs, matrix_dims_in_capsule, n_channels, kernel_size, strides,
     :param n_channels: the number of types of capsules
     :return: output tensor, shape=[None, num_capsule, dim_capsule]
     """
-    poses = layers.Conv2D(filters= matrix_dims_in_capsule * matrix_dims_in_capsule * n_channels, kernel_size=kernel_size, strides=strides, padding=padding,
+    poses = layers.Consanv2D(filters= matrix_dims_in_capsule * matrix_dims_in_capsule * n_channels, kernel_size=kernel_size, strides=strides, padding=padding,
                            name='primarycap_poses_stacked')(inputs)
     poses = layers.Reshape(target_shape=[int(poses.shape[1]),int(poses.shape[2]), n_channels,matrix_dims_in_capsule,matrix_dims_in_capsule], name='primarycap_poses')(poses)
 
@@ -195,6 +195,8 @@ def CapsulesConv(poses, activations, n_channels, kernel_size, strides, padding):
     # 3. it uses a vector of length n rather than a matrix with n elements to represent a pose, so its transformation matrices have n^2 parameters rather than just n.
 
     # this explicit express a matrix PH x PW should be use as a viewpoint transformation matrix to adjust pose.
+
+    nets, shape = [3, 3, 32, 32], strides = [1, 2, 2, 1], iterations = iterations, name = 'capsule_conv1'
 
 
     poses = layers.Conv2D(filters= matrix_dims_in_capsule * matrix_dims_in_capsule * n_channels, kernel_size=kernel_size, strides=strides, padding=padding,

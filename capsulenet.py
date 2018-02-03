@@ -49,18 +49,25 @@ def CapsNet(input_shape, n_class, routings):
     """
 
     # Layer 1: Just a conventional Conv2D layer
-    # inputs [N, H, W, C] -> conv2d, 5x5, strides 2, channels 32 -> nets [N, OH, OW, 32]
     # Input Layer -> AL (A=32): kernel [5, 5, 1, 32], strides [1, 2, 2, 1], padding SAME, ReLU. This is a regular convoluation operation connects IL to AL.
+    # inputs [N, H, W, C] -> conv2d, 5x5, strides 2, channels 32 -> nets [N, OH, OW, 32]
     conv1 = layers.Conv2D(filters=32, kernel_size=5, strides=2, padding='same', activation='relu', name='conv1')(x)
     # Layer AL: [128, 14, 14, 32].
 
 
-    # Layer 2:
+    # Layer 2: Capsule Initialize
     # AL -> BL (B=48): kernel [1, 1, 32, 48] x (4 x 4 + 1), strides [1, 1, 1, 1].
     # 16 such kernels of [1, 1, 32, 48] for building poses, and 1 such kernel [1, 1, 32, 48] for building activation. This is the initialization operation to connect
     # a regular layer to a matrix capsule layer, implemented in capsule_init() with details in next section.
     # inputs [N, H, W, C] -> conv2d, 1x1, strides 1, channels 32x(4x4+1) -> (poses, activations)
     poses, activations = PrimaryCap(conv1, matrix_dims_in_capsule=4, n_channels=32, kernel_size=1, strides=1, padding='valid')
+
+
+    # Layer 3: Capsule Conv 1
+    # inputs: (poses, activations) -> capsule-conv 3x3x32x32x4x4, strides 2 -> (poses, activations)
+    nets = capsules_conv(
+        nets, shape=[3, 3, 32, 32], strides=[1, 2, 2, 1], iterations=iterations, name='capsule_conv1'
+    )
 
     # Layer 3: Capsule layer. Routing algorithm works here.
     # digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=16, routings=routings,
